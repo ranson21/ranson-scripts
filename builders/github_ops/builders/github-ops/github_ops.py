@@ -33,15 +33,6 @@ class GitHubOps:
                 ),
                 "git@github.com:",
             ],
-            [
-                "git",
-                "config",
-                "--global",
-                "url.'https://oauth2:{}@github.com/'.insteadOf".format(
-                    self.github_token
-                ),
-                "https://github.com/",
-            ],
             ["git", "config", "--global", "user.email", "cloudbuild@example.com"],
             ["git", "config", "--global", "user.name", "Cloud Build"],
         ]
@@ -146,9 +137,8 @@ class GitHubOps:
         os.chdir("parent-repo")
 
         # Update submodule
-        subprocess.run(
-            ["git", "submodule", "update", "--init", submodule_path], check=True
-        )
+        subprocess.run(["git", "submodule", "init", submodule_path], check=True)
+        subprocess.run(["git", "submodule", "update", submodule_path], check=True)
 
         # Create branch and update submodule
         branch_name = f"update-{self.repo_name}-{new_version}"
