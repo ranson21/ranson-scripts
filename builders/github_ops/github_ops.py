@@ -1,5 +1,3 @@
-# github_ops.py
-
 import os
 import re
 import json
@@ -19,6 +17,37 @@ class GitHubOps:
             "Accept": "application/vnd.github.v3+json",
         }
         self.api_base = "https://api.github.com"
+
+        # Configure git globally for HTTPS with token
+        self._configure_git()
+
+    def _configure_git(self):
+        """Configure git globally to use HTTPS with token authentication."""
+        commands = [
+            [
+                "git",
+                "config",
+                "--global",
+                "url.'https://oauth2:{}@github.com/'.insteadOf".format(
+                    self.github_token
+                ),
+                "git@github.com:",
+            ],
+            [
+                "git",
+                "config",
+                "--global",
+                "url.'https://oauth2:{}@github.com/'.insteadOf".format(
+                    self.github_token
+                ),
+                "https://github.com/",
+            ],
+            ["git", "config", "--global", "user.email", "cloudbuild@example.com"],
+            ["git", "config", "--global", "user.name", "Cloud Build"],
+        ]
+
+        for cmd in commands:
+            subprocess.run(cmd, check=True)
 
     def get_latest_version(self) -> str:
         """Get the latest release version from GitHub."""
@@ -110,24 +139,11 @@ class GitHubOps:
         self, parent_repo: str, submodule_path: str, new_version: str
     ) -> str:
         """Update submodule in parent repository and create PR."""
-        # Clone parent repo
-        subprocess.run(
-            [
-                "git",
-                "clone",
-                f"https://oauth2:{self.github_token}@github.com/{self.repo_owner}/{parent_repo}.git",
-                "parent-repo",
-            ],
-            check=True,
-        )
+        # Clone parent repo using HTTPS with token
+        repo_url = f"https://oauth2:{self.github_token}@github.com/{self.repo_owner}/{parent_repo}.git"
+        subprocess.run(["git", "clone", repo_url, "parent-repo"], check=True)
 
         os.chdir("parent-repo")
-
-        # Configure git
-        subprocess.run(
-            ["git", "config", "user.email", "cloudbuild@example.com"], check=True
-        )
-        subprocess.run(["git", "config", "user.name", "Cloud Build"], check=True)
 
         # Update submodule
         subprocess.run(
